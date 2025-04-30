@@ -12,8 +12,14 @@ use EventSauce\EventSourcing\Serialization\ConstructingMessageSerializer;
 use EventSauce\EventSourcing\Serialization\MessageSerializer;
 use EventSauce\EventSourcing\SynchronousMessageDispatcher;
 use Reservation\BookingRepository;
+use Reservation\CommandHandler\CancelBookingHandler;
 use Reservation\CommandHandler\CreateBookingHandler;
 use Reservation\CommandHandler\RecordEstimatedCheckInTimeHandler;
+use Reservation\ReadModel\BookingProjector;
+use Reservation\ReadModel\BookingReadModelRepository;
+use Reservation\ReadModel\DoctrineBookingReadModelRepository;
+use Reservation\TransactionalBookingRepository;
+use Reservation\TransactionalMessageDispatcher;
 
 return function () {
     $containerBuilder = new ContainerBuilder();
@@ -46,12 +52,37 @@ return function () {
                 'event_store'
             );
         },
+
+        // Transactional message dispatcher
+        TransactionalMessageDispatcher::class => function (Connection $connection) {
+            return new TransactionalMessageDispatcher($connection);
+        },
+        
+        // Read model repository
+        BookingReadModelRepository::class => function (Connection $connection) {
+            $repository = new DoctrineBookingReadModelRepository($connection);
+            // Ensure table exists
+            $repository->createTable();
+            return $repository;
+        },
+        
+        // Event projector
+        BookingProjector::class => function (BookingReadModelRepository $repository) {
+            return new BookingProjector($repository);
+        },
         
         // Booking repository
-        BookingRepository::class => function (MessageRepository $messageRepository, MessageDecorator $messageDecorator) {
-            $dispatcher = new SynchronousMessageDispatcher();
+        BookingRepository::class => function (
+            MessageRepository $messageRepository, 
+            MessageDecorator $messageDecorator,
+            TransactionalMessageDispatcher $dispatcher,
+            BookingProjector $projector
+        ) {
+            // Add the projector as a consumer
+            $dispatcher->addConsumer($projector);
             
-            return new BookingRepository(
+            // Return the transactional repository
+            return new TransactionalBookingRepository(
                 $messageRepository,
                 $messageDecorator,
                 $dispatcher
@@ -65,6 +96,10 @@ return function () {
         
         RecordEstimatedCheckInTimeHandler::class => function (BookingRepository $repository) {
             return new RecordEstimatedCheckInTimeHandler($repository);
+        },
+
+        CancelBookingHandler::class => function (BookingRepository $repository) {
+            return new CancelBookingHandler($repository);
         },
     ]);
     

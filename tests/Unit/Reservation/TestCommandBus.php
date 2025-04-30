@@ -3,6 +3,7 @@
 namespace Tests\Unit\Reservation;
 
 use Common\CommandBus\CommandBus;
+use DI\Container;
 use EventSauce\EventSourcing\AggregateRootRepository;
 use League\Tactician\CommandBus as TacticianCommandBus;
 use League\Tactician\Handler\CommandHandlerMiddleware;
@@ -19,6 +20,33 @@ use Reservation\CommandHandler\RecordEstimatedCheckInTimeHandler;
 
 class TestCommandBus
 {
+    private CommandBus $commandBus;
+
+    public function __construct(Container $container)
+    {
+        $locator = new InMemoryLocator();
+        
+        // Get the handlers from the container
+        $locator->addHandler($container->get(CreateBookingHandler::class), CreateBooking::class);
+        $locator->addHandler($container->get(RecordEstimatedCheckInTimeHandler::class), RecordEstimatedCheckInTime::class);
+        $locator->addHandler($container->get(CancelBookingHandler::class), CancelBooking::class);
+        
+        // Create the command bus
+        $handlerMiddleware = new CommandHandlerMiddleware(
+            new ClassNameExtractor(),
+            $locator,
+            new HandleInflector()
+        );
+        
+        $tacticianCommandBus = new TacticianCommandBus([$handlerMiddleware]);
+        $this->commandBus = new CommandBus($tacticianCommandBus);
+    }
+
+    public function handle(object $command): void
+    {
+        $this->commandBus->handle($command);
+    }
+
     public static function create(BookingRepository $repository): CommandBus
     {
         // Create handler locator
