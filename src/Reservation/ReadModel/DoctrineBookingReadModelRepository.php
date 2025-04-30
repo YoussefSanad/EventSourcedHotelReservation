@@ -34,6 +34,11 @@ class DoctrineBookingReadModelRepository implements BookingReadModelRepository
         $table->addColumn('is_cancelled', 'boolean', ['default' => false]);
         $table->addColumn('cancellation_reason', 'string', ['notnull' => false, 'length' => 255]);
         $table->addColumn('cancelled_at', 'string', ['notnull' => false, 'length' => 20]);
+        $table->addColumn('is_checked_in', 'boolean', ['default' => false]);
+        $table->addColumn('actual_arrival_time', 'string', ['notnull' => false, 'length' => 20]);
+        $table->addColumn('room_number', 'string', ['notnull' => false, 'length' => 20]);
+        $table->addColumn('special_requests', 'text', ['notnull' => false]);
+        $table->addColumn('checkin_time', 'string', ['notnull' => false, 'length' => 20]);
         $table->setPrimaryKey(['id']);
 
         $sqlQueries = $schema->toSql($this->connection->getDatabasePlatform());
@@ -57,7 +62,12 @@ class DoctrineBookingReadModelRepository implements BookingReadModelRepository
                     'estimated_check_in_time' => $booking->getEstimatedCheckInTime(),
                     'is_cancelled' => $booking->isCancelled() ? 1 : 0,
                     'cancellation_reason' => $booking->getCancellationReason(),
-                    'cancelled_at' => $booking->getCancelledAt()
+                    'cancelled_at' => $booking->getCancelledAt(),
+                    'is_checked_in' => $booking->isCheckedIn() ? 1 : 0,
+                    'actual_arrival_time' => $booking->getActualArrivalTime(),
+                    'room_number' => $booking->getRoomNumber(),
+                    'special_requests' => $booking->getSpecialRequests() ? json_encode($booking->getSpecialRequests()) : null,
+                    'checkin_time' => $booking->getCheckinTime()
                 ],
                 ['id' => $booking->getId()]
             );
@@ -73,7 +83,12 @@ class DoctrineBookingReadModelRepository implements BookingReadModelRepository
                     'estimated_check_in_time' => $booking->getEstimatedCheckInTime(),
                     'is_cancelled' => $booking->isCancelled() ? 1 : 0,
                     'cancellation_reason' => $booking->getCancellationReason(),
-                    'cancelled_at' => $booking->getCancelledAt()
+                    'cancelled_at' => $booking->getCancelledAt(),
+                    'is_checked_in' => $booking->isCheckedIn() ? 1 : 0,
+                    'actual_arrival_time' => $booking->getActualArrivalTime(),
+                    'room_number' => $booking->getRoomNumber(),
+                    'special_requests' => $booking->getSpecialRequests() ? json_encode($booking->getSpecialRequests()) : null,
+                    'checkin_time' => $booking->getCheckinTime()
                 ]
             );
         }
@@ -114,6 +129,11 @@ class DoctrineBookingReadModelRepository implements BookingReadModelRepository
 
     private function hydrateBookingReadModel(array $data): BookingReadModel
     {
+        $specialRequests = null;
+        if (!empty($data['special_requests'])) {
+            $specialRequests = json_decode($data['special_requests'], true);
+        }
+        
         return new BookingReadModel(
             $data['id'],
             $data['guest_name'],
@@ -123,7 +143,12 @@ class DoctrineBookingReadModelRepository implements BookingReadModelRepository
             $data['estimated_check_in_time'],
             (bool) $data['is_cancelled'],
             $data['cancellation_reason'],
-            $data['cancelled_at']
+            $data['cancelled_at'],
+            (bool) $data['is_checked_in'],
+            $data['actual_arrival_time'],
+            $data['room_number'],
+            $specialRequests,
+            $data['checkin_time']
         );
     }
 } 

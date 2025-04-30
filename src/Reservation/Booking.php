@@ -6,9 +6,11 @@ use EventSauce\EventSourcing\AggregateRoot;
 use EventSauce\EventSourcing\AggregateRootBehaviour;
 use Reservation\Command\CancelBooking;
 use Reservation\Command\CreateBooking;
+use Reservation\Command\InitiateCheckin;
 use Reservation\Command\RecordEstimatedCheckInTime;
 use Reservation\Event\BookingCancelled;
 use Reservation\Event\BookingCreated;
+use Reservation\Event\CheckinInitiated;
 use Reservation\Event\EstimatedCheckInTimeRecorded;
 
 class Booking implements AggregateRoot
@@ -24,6 +26,11 @@ class Booking implements AggregateRoot
     private bool $isCancelled = false;
     private ?string $cancellationReason = null;
     private ?\DateTimeImmutable $cancelledAt = null;
+    private bool $isCheckedIn = false;
+    private ?string $actualArrivalTime = null;
+    private ?string $roomNumber = null;
+    private ?array $specialRequests = null;
+    private ?\DateTimeImmutable $checkinTime = null;
 
     public static function createBooking(CreateBooking $command): self
     {
@@ -60,6 +67,24 @@ class Booking implements AggregateRoot
         ));
     }
 
+    public function initiateCheckin(InitiateCheckin $command): void
+    {
+        if ($this->isCancelled) {
+            throw new \DomainException('Cannot check in a cancelled booking');
+        }
+
+        if ($this->isCheckedIn) {
+            throw new \DomainException('Guest has already checked in');
+        }
+
+        $this->recordThat(new CheckinInitiated(
+            $this->aggregateRootId()->toString(),
+            $command->actualArrivalTime(),
+            $command->roomNumber(),
+            $command->specialRequests()
+        ));
+    }
+
     public function applyBookingCreated(BookingCreated $event): void
     {
         $this->guestName = $event->guestName();
@@ -78,6 +103,15 @@ class Booking implements AggregateRoot
         $this->isCancelled = true;
         $this->cancellationReason = $event->cancellationReason();
         $this->cancelledAt = new \DateTimeImmutable($event->cancelledAt());
+    }
+
+    public function applyCheckinInitiated(CheckinInitiated $event): void
+    {
+        $this->isCheckedIn = true;
+        $this->actualArrivalTime = $event->actualArrivalTime();
+        $this->roomNumber = $event->roomNumber();
+        $this->specialRequests = $event->specialRequests();
+        $this->checkinTime = new \DateTimeImmutable($event->initiatedAt());
     }
     
     public function getGuestName(): string
@@ -123,5 +157,30 @@ class Booking implements AggregateRoot
     public function getCancelledAt(): ?\DateTimeImmutable
     {
         return $this->cancelledAt;
+    }
+
+    public function isCheckedIn(): bool
+    {
+        return $this->isCheckedIn;
+    }
+
+    public function getActualArrivalTime(): ?string
+    {
+        return $this->actualArrivalTime;
+    }
+
+    public function getRoomNumber(): ?string
+    {
+        return $this->roomNumber;
+    }
+
+    public function getSpecialRequests(): ?array
+    {
+        return $this->specialRequests;
+    }
+
+    public function getCheckinTime(): ?\DateTimeImmutable
+    {
+        return $this->checkinTime;
     }
 } 

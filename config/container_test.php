@@ -16,12 +16,15 @@ use Reservation\BookingId;
 use Reservation\BookingRepository;
 use Reservation\Command\CancelBooking;
 use Reservation\Command\CreateBooking;
+use Reservation\Command\InitiateCheckin;
 use Reservation\Command\RecordEstimatedCheckInTime;
 use Reservation\CommandHandler\CancelBookingHandler;
 use Reservation\CommandHandler\CreateBookingHandler;
+use Reservation\CommandHandler\InitiateCheckinHandler;
 use Reservation\CommandHandler\RecordEstimatedCheckInTimeHandler;
 use Reservation\Event\BookingCancelled;
 use Reservation\Event\BookingCreated;
+use Reservation\Event\CheckinInitiated;
 use Reservation\Event\EstimatedCheckInTimeRecorded;
 use Reservation\ReadModel\BookingProjector;
 use Reservation\ReadModel\BookingReadModelRepository;
@@ -108,6 +111,10 @@ return function () {
 
         CancelBookingHandler::class => function (BookingRepository $repository) {
             return new CancelBookingHandler($repository);
+        },
+        
+        InitiateCheckinHandler::class => function (BookingRepository $repository) {
+            return new InitiateCheckinHandler($repository);
         },
     ]);
     

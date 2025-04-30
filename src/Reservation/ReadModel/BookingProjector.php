@@ -5,6 +5,7 @@ namespace Reservation\ReadModel;
 use EventSauce\EventSourcing\Message;
 use Reservation\Event\BookingCancelled;
 use Reservation\Event\BookingCreated;
+use Reservation\Event\CheckinInitiated;
 use Reservation\Event\EstimatedCheckInTimeRecorded;
 
 class BookingProjector
@@ -26,6 +27,8 @@ class BookingProjector
             $this->whenEstimatedCheckInTimeRecorded($event);
         } elseif ($event instanceof BookingCancelled) {
             $this->whenBookingCancelled($event);
+        } elseif ($event instanceof CheckinInitiated) {
+            $this->whenCheckinInitiated($event);
         }
     }
 
@@ -61,6 +64,22 @@ class BookingProjector
         }
 
         $booking->cancel($event->cancellationReason(), $event->cancelledAt());
+        $this->repository->save($booking);
+    }
+
+    private function whenCheckinInitiated(CheckinInitiated $event): void
+    {
+        $booking = $this->repository->findById($event->bookingId());
+        if ($booking === null) {
+            return;
+        }
+
+        $booking->checkin(
+            $event->actualArrivalTime(),
+            $event->roomNumber(),
+            $event->specialRequests(),
+            $event->initiatedAt()
+        );
         $this->repository->save($booking);
     }
 } 

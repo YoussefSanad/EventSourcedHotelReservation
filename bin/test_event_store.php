@@ -12,9 +12,11 @@ use Reservation\BookingId;
 use Reservation\BookingRepository;
 use Reservation\Command\CancelBooking;
 use Reservation\Command\CreateBooking;
+use Reservation\Command\InitiateCheckin;
 use Reservation\Command\RecordEstimatedCheckInTime;
 use Reservation\CommandHandler\CancelBookingHandler;
 use Reservation\CommandHandler\CreateBookingHandler;
+use Reservation\CommandHandler\InitiateCheckinHandler;
 use Reservation\CommandHandler\RecordEstimatedCheckInTimeHandler;
 
 // Initialize the container
@@ -28,6 +30,7 @@ $locator = new InMemoryLocator();
 $locator->addHandler(new CreateBookingHandler($repository), CreateBooking::class);
 $locator->addHandler(new RecordEstimatedCheckInTimeHandler($repository), RecordEstimatedCheckInTime::class);
 $locator->addHandler(new CancelBookingHandler($repository), CancelBooking::class);
+$locator->addHandler(new InitiateCheckinHandler($repository), InitiateCheckin::class);
 
 // Create command bus
 $handlerMiddleware = new CommandHandlerMiddleware(
@@ -76,35 +79,58 @@ echo "- Room Type: " . $booking->getRoomType() . "\n";
 echo "- Check-in Date: " . $booking->getCheckInDate()->format('Y-m-d') . "\n";
 echo "- Check-out Date: " . $booking->getCheckOutDate()->format('Y-m-d') . "\n";
 echo "- Estimated Check-in Time: " . $booking->getEstimatedCheckInTime() . "\n";
-echo "- Is Cancelled: " . ($booking->isCancelled() ? 'Yes' : 'No') . "\n\n";
+echo "- Is Cancelled: " . ($booking->isCancelled() ? 'Yes' : 'No') . "\n";
+echo "- Is Checked In: " . ($booking->isCheckedIn() ? 'Yes' : 'No') . "\n\n";
 
-// Cancel the booking
-$cancellationReason = "Guest plans changed";
-$cancelCommand = new CancelBooking($bookingId, $cancellationReason);
+// Initiate check-in
+$actualArrivalTime = "16:15";
+$roomNumber = "301";
+$specialRequests = ["Extra pillows", "Late checkout request"];
 
-echo "Cancelling booking with reason: $cancellationReason...\n";
-$commandBus->handle($cancelCommand);
-echo "Booking cancelled successfully.\n";
+$initiateCheckinCommand = new InitiateCheckin(
+    $bookingId, 
+    $actualArrivalTime,
+    $roomNumber,
+    $specialRequests
+);
 
-// Retrieve the booking again to verify cancellation
-echo "Retrieving booking from event store after cancellation...\n";
+echo "Initiating check-in process...\n";
+$commandBus->handle($initiateCheckinCommand);
+echo "Check-in initiated successfully.\n";
+
+// Retrieve the booking again to verify check-in
+echo "Retrieving booking from event store after check-in...\n";
 $booking = $repository->retrieveBooking($bookingId);
 
-echo "Updated booking details:\n";
+echo "Updated booking details after check-in:\n";
 echo "- Guest: " . $booking->getGuestName() . "\n";
 echo "- Room Type: " . $booking->getRoomType() . "\n";
 echo "- Check-in Date: " . $booking->getCheckInDate()->format('Y-m-d') . "\n";
 echo "- Check-out Date: " . $booking->getCheckOutDate()->format('Y-m-d') . "\n";
 echo "- Estimated Check-in Time: " . $booking->getEstimatedCheckInTime() . "\n";
-echo "- Is Cancelled: " . ($booking->isCancelled() ? 'Yes' : 'No') . "\n";
-echo "- Cancellation Reason: " . $booking->getCancellationReason() . "\n";
-echo "- Cancelled At: " . $booking->getCancelledAt()->format('Y-m-d H:i:s') . "\n";
+echo "- Is Checked In: " . ($booking->isCheckedIn() ? 'Yes' : 'No') . "\n";
+echo "- Actual Arrival Time: " . $booking->getActualArrivalTime() . "\n";
+echo "- Room Number: " . $booking->getRoomNumber() . "\n";
+echo "- Special Requests: " . implode(", ", $booking->getSpecialRequests() ?? []) . "\n";
+echo "- Check-in Time: " . $booking->getCheckinTime()->format('Y-m-d H:i:s') . "\n\n";
 
-// Try to cancel an already cancelled booking (should throw an exception)
+// Try to check in an already checked-in booking (should throw an exception)
 try {
-    echo "\nAttempting to cancel an already cancelled booking...\n";
-    $commandBus->handle(new CancelBooking($bookingId, "Another reason"));
+    echo "Attempting to check in an already checked-in booking...\n";
+    $commandBus->handle(new InitiateCheckin($bookingId, "17:00"));
     echo "This should not be reached.\n";
 } catch (\DomainException $e) {
-    echo "Exception caught as expected: " . $e->getMessage() . "\n";
+    echo "Exception caught as expected: " . $e->getMessage() . "\n\n";
+}
+
+// Try to cancel the booking
+$cancellationReason = "Guest plans changed";
+$cancelCommand = new CancelBooking($bookingId, $cancellationReason);
+
+echo "Cancelling booking with reason: $cancellationReason...\n";
+try {
+    $commandBus->handle($cancelCommand);
+    echo "Booking cancelled successfully.\n";
+} catch (\DomainException $e) {
+    echo "Exception caught: " . $e->getMessage() . "\n";
 } 

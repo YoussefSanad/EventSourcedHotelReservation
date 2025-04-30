@@ -13,6 +13,11 @@ class BookingReadModel
     private bool $isCancelled;
     private ?string $cancellationReason;
     private ?string $cancelledAt;
+    private bool $isCheckedIn;
+    private ?string $actualArrivalTime;
+    private ?string $roomNumber;
+    private ?array $specialRequests;
+    private ?string $checkinTime;
 
     public function __construct(
         string $id,
@@ -23,7 +28,12 @@ class BookingReadModel
         ?string $estimatedCheckInTime = null,
         bool $isCancelled = false,
         ?string $cancellationReason = null, 
-        ?string $cancelledAt = null
+        ?string $cancelledAt = null,
+        bool $isCheckedIn = false,
+        ?string $actualArrivalTime = null,
+        ?string $roomNumber = null,
+        ?array $specialRequests = null,
+        ?string $checkinTime = null
     ) {
         $this->id = $id;
         $this->guestName = $guestName;
@@ -34,6 +44,11 @@ class BookingReadModel
         $this->isCancelled = $isCancelled;
         $this->cancellationReason = $cancellationReason;
         $this->cancelledAt = $cancelledAt;
+        $this->isCheckedIn = $isCheckedIn;
+        $this->actualArrivalTime = $actualArrivalTime;
+        $this->roomNumber = $roomNumber;
+        $this->specialRequests = $specialRequests;
+        $this->checkinTime = $checkinTime;
     }
 
     public function getId(): string
@@ -81,6 +96,31 @@ class BookingReadModel
         return $this->cancelledAt;
     }
 
+    public function isCheckedIn(): bool
+    {
+        return $this->isCheckedIn;
+    }
+
+    public function getActualArrivalTime(): ?string
+    {
+        return $this->actualArrivalTime;
+    }
+
+    public function getRoomNumber(): ?string
+    {
+        return $this->roomNumber;
+    }
+
+    public function getSpecialRequests(): ?array
+    {
+        return $this->specialRequests;
+    }
+
+    public function getCheckinTime(): ?string
+    {
+        return $this->checkinTime;
+    }
+
     public function setEstimatedCheckInTime(?string $estimatedCheckInTime): void
     {
         $this->estimatedCheckInTime = $estimatedCheckInTime;
@@ -91,5 +131,14 @@ class BookingReadModel
         $this->isCancelled = true;
         $this->cancellationReason = $cancellationReason;
         $this->cancelledAt = $cancelledAt;
+    }
+
+    public function checkin(string $actualArrivalTime, ?string $roomNumber, ?array $specialRequests, string $checkinTime): void
+    {
+        $this->isCheckedIn = true;
+        $this->actualArrivalTime = $actualArrivalTime;
+        $this->roomNumber = $roomNumber;
+        $this->specialRequests = $specialRequests;
+        $this->checkinTime = $checkinTime;
     }
 } 
