@@ -13,9 +13,11 @@ use League\Tactician\Handler\MethodNameInflector\HandleInflector;
 use Reservation\BookingRepository;
 use Reservation\Command\CancelBooking;
 use Reservation\Command\CreateBooking;
+use Reservation\Command\InitiateCheckin;
 use Reservation\Command\RecordEstimatedCheckInTime;
 use Reservation\CommandHandler\CancelBookingHandler;
 use Reservation\CommandHandler\CreateBookingHandler;
+use Reservation\CommandHandler\InitiateCheckinHandler;
 use Reservation\CommandHandler\RecordEstimatedCheckInTimeHandler;
 
 class TestCommandBus
@@ -30,6 +32,7 @@ class TestCommandBus
         $locator->addHandler($container->get(CreateBookingHandler::class), CreateBooking::class);
         $locator->addHandler($container->get(RecordEstimatedCheckInTimeHandler::class), RecordEstimatedCheckInTime::class);
         $locator->addHandler($container->get(CancelBookingHandler::class), CancelBooking::class);
+        $locator->addHandler($container->get(InitiateCheckinHandler::class), InitiateCheckin::class);
         
         // Create the command bus
         $handlerMiddleware = new CommandHandlerMiddleware(
@@ -56,6 +59,7 @@ class TestCommandBus
         $locator->addHandler(new CreateBookingHandler($repository), CreateBooking::class);
         $locator->addHandler(new RecordEstimatedCheckInTimeHandler($repository), RecordEstimatedCheckInTime::class);
         $locator->addHandler(new CancelBookingHandler($repository), CancelBooking::class);
+        $locator->addHandler(new InitiateCheckinHandler($repository), InitiateCheckin::class);
         
         // Create the command bus with appropriate middleware
         $handlerMiddleware = new CommandHandlerMiddleware(

@@ -5,7 +5,8 @@
     "autoload": {
         "psr-4": {
             "Reservation\\": "src/Reservation/",
-            "Common\\": "src/Common/"
+            "Common\\": "src/Common/",
+            "Finance\\": "src/Finance/"
         }
     },
     "autoload-dev": {
