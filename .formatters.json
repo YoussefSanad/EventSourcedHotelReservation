@@ -1,0 +1,52 @@
+{
+  "formatters": {
+    "php": {
+      "indent_size": 4,
+      "tab_width": 4,
+      "use_tabs": false,
+      "function_call_argument_newlines": "consistent",
+      "function_declaration_argument_newlines": "consistent",
+      "trailing_comma_in_multiline": true,
+      "method_chaining_indentation": true,
+      "line_ending": "LF",
+      "opening_brace_on_new_line": false,
+      "blank_line_after_namespace": true,
+      "blank_line_after_use_statements": true,
+      "control_structure_continuation_position": "same_line"
+    }
+  },
+  "rules": {
+    "method_calls": {
+      "style": "vertical",
+      "indentation": 4,
+      "opening_paren_position": "same_line",
+      "closing_paren_position": "own_line",
+      "example": [
+        "$this->when(",
+        "    new CreateBooking(",
+        "        $bookingId,",
+        "        $guestName,",
+        "        $roomType,",
+        "        $checkInDate,",
+        "        $checkOutDate",
+        "    )",
+        ");"
+      ]
+    },
+    "object_creation": {
+      "style": "vertical",
+      "indentation": 4,
+      "opening_paren_position": "same_line",
+      "closing_paren_position": "own_line",
+      "example": [
+        "new BookingCreated(",
+        "    $bookingId->toString(),",
+        "    $guestName,",
+        "    $roomType,",
+        "    $checkInDate->format('Y-m-d'),",
+        "    $checkOutDate->format('Y-m-d')",
+        ")"
+      ]
+    }
+  }
+} 
